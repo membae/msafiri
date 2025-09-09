@@ -1,4 +1,4 @@
-from models import db, User,Booking
+from models import db, User,Booking,Bus
 from flask_migrate import Migrate
 from flask import Flask, make_response,jsonify,request
 from flask_cors import CORS
@@ -108,11 +108,37 @@ class User_Booking(Resource):
         
         from_loc = data.get("from_loc")
         to_loc = data.get("to_loc")
+        bus_id = data.get("bus_id")
+        seat_number = data.get("seat_number")
+        
+        existing_booking = Booking.query.filter_by(user_id=user_id, bus_id=bus_id).first()
+        if existing_booking:
+            return make_response({"msg": "You have already booked a seat on this bus"}, 400)
 
-        # fetch fare
+   
         fare = FARES.get((from_loc, to_loc))
         if not fare:
             return make_response({"msg": "Invalid route"}, 400)
+        
+        bus = Bus.query.get(bus_id)
+        if not bus:
+            return make_response({"msg": "Bus not found"}, 404)
+
+   
+        if len(bus.bookings) >= bus.capacity:
+            return make_response({"msg": "Bus is fully booked"}, 400)
+        
+        try:
+            seat_number_int = int(seat_number)
+            if seat_number_int < 1 or seat_number_int > bus.capacity:
+                return make_response({"msg": f"Seat number must be between 1 and {bus.capacity}"}, 400)
+        except ValueError:
+            return make_response({"msg": "Seat number must be a valid integer"}, 400)
+
+    
+        if seat_number in [b.seat_number for b in bus.bookings]:
+            return make_response({"msg": f"Seat {seat_number} is already booked"}, 400)
+
 
         new_booking = Booking(
             user_id=user_id,
@@ -130,6 +156,84 @@ class User_Booking(Resource):
     
 api.add_resource(User_Booking,"/booking","/booking/<int:booking_id>")
 
+
+class GetBus(Resource):
+    def get(self,id=None):
+        if id:
+            bus=Bus.query.filter_by(id=id).first()
+            if bus:
+                return make_response(bus.to_dict(),200)
+            return make_response({"msg":f"bus with id {id} does not exist"},401)
+        buses=[b.to_dict() for b in Bus.query.all()]
+        return make_response(buses,201)
+    
+    def post(self):
+        data=request.get_json()
+        regNo = data.get("regNo")
+        capacity = data.get("capacity")
+
+        if not regNo or not capacity:
+            return make_response({"msg": "regNo and capacity are required"}, 400)
+        
+        try:
+            capacity = int(capacity)
+            if capacity <= 0:
+                raise ValueError
+        except ValueError:
+            return make_response({"msg": "capacity must be a positive integer"}, 400)
+
+        existing_bus = Bus.query.filter_by(regNo=regNo).first()
+        if existing_bus:
+            return make_response({"msg": "Bus with this registration number already exists"}, 409)
+        new_bus=Bus(
+            regNo=regNo,
+            capacity=capacity
+        )
+        db.session.add(new_bus)
+        db.session.commit()
+        return make_response(new_bus.to_dict(),201)
+    
+    def patch(self, id):
+        bus = Bus.query.filter_by(id=id).first()
+        if not bus:
+            return make_response({"msg": f"Bus with id {id} does not exist"}, 404)
+
+        data = request.get_json()
+        regNo = data.get("regNo")
+        capacity = data.get("capacity")
+        
+        if regNo:
+        # Optional: check uniqueness
+            # existing_bus = Bus.query.filter_by(regNo=regNo).first()
+            # if existing_bus and existing_bus.id != id:
+            #     return make_response({"msg": "Another bus with this registration number already exists"}, 409)
+            bus.regNo = regNo
+
+        if capacity:
+            try:
+                capacity = int(capacity)
+                if capacity <= 0:
+                    raise ValueError
+                bus.capacity = capacity
+            except ValueError:
+                return make_response({"msg": "capacity must be a positive integer"}, 400)
+
+        db.session.commit()
+        return make_response(bus.to_dict(), 200)
+
+    def delete(self, id):
+        bus = Bus.query.filter_by(id=id).first()
+        if not bus:
+            return make_response({"msg": f"Bus with id {id} does not exist"}, 404)
+
+        db.session.delete(bus)
+        db.session.commit()
+        return make_response({"msg": f"Bus with id {id} deleted successfully"}, 200)
+
+    
+
+
+api.add_resource(GetBus,"/buses","/buses/<int:id>")
 
 
 class Location(Resource):

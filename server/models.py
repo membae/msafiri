@@ -24,12 +24,23 @@ class Booking(db.Model, SerializerMixin):
     to_loc=db.Column(db.String, nullable=False)
     date=db.Column(db.String, nullable=False)
     fare=db.Column(db.Integer, nullable=False)
-    bus_id = db.Column(db.Integer, nullable=False)
     seat_number = db.Column(db.String(10), nullable=False)
     
     user_id=db.Column(db.Integer, db.ForeignKey("users.id"))
+    bus_id = db.Column(db.Integer, db.ForeignKey("buses.id"))
+     
     user=db.relationship("User",back_populates="booking")
+    bus=db.relationship("Bus",back_populates="bookings")
     serialize_only = ("id", "from_loc", "to_loc", "date", "bus_id", "seat_number", "fare", "user_id")
 
     
+class Bus(db.Model, SerializerMixin):
+    __tablename__="buses"
+    
+    id=db.Column(db.Integer, primary_key=True)
+    regNo=db.Column(db.String, unique=True)
+    capacity=db.Column(db.Integer, nullable=False)
+    
+    bookings = db.relationship("Booking", back_populates="bus", cascade="all, delete-orphan")
+    serialize_only = ("id", "regNo", "capacity")
     
