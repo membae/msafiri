@@ -18,15 +18,17 @@ app = Flask(__name__)
 CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] =secrets.token_hex(32)
+# app.config['SECRET_KEY'] =secrets.token_hex(32)
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=30)
 app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
+app.config['SECRET_KEY'] = "super-secret-key"       # Flask sessions
+app.config['JWT_SECRET_KEY'] = "super-secret-key"   
 
-
-
-migrate = Migrate(app, db)
 
 db.init_app(app)
+migrate = Migrate(app, db)
+
+
 api=Api(app)
 jwt=JWTManager(app)
 
@@ -79,14 +81,54 @@ class Login(Resource):
             user=User.query.filter_by(email=email).first()
             if user:
                 if check_password_hash(user.password,password):
-                    access_token=create_access_token(identity=user.id)
-                    refresh_token=create_refresh_token(identity=user.id)
+                    access_token=create_access_token(identity=str(user.id))
+                    refresh_token=create_refresh_token(identity=str(user.id))
                     return make_response({"user":user.to_dict(),"access_token":access_token,"refresh_token":refresh_token},200)
                 return make_response({"msg":"Incorrect password"},400)
             return make_response({"msg":"email not registered"},404)
         return make_response({"msg":"Invalid data"})
 api.add_resource(Login,'/login')
 
+
+class User_Booking(Resource):
+    def get(self,booking_id=None):
+        if booking_id:
+            booking=Booking.query.get(booking_id)
+            if booking:
+                return make_response(booking.to_dict(),200)
+            return make_response({"msg":"Booking not found"},404)
+        bookings = [b.to_dict() for b in Booking.query.all()]
+        return make_response(bookings,200)
+        
+    
+    @jwt_required()
+    def post(self):
+        data=request.get_json()
+        user_id = int(get_jwt_identity())
+        
+        from_loc = data.get("from_loc")
+        to_loc = data.get("to_loc")
+
+        # fetch fare
+        fare = FARES.get((from_loc, to_loc))
+        if not fare:
+            return make_response({"msg": "Invalid route"}, 400)
+
+        new_booking = Booking(
+            user_id=user_id,
+            from_loc=from_loc,
+            to_loc=to_loc,
+            date=data.get("date"),
+            bus_id=data.get("bus_id"),
+            seat_number=data.get("seat_number"),
+            fare=fare,
+        )
+        db.session.add(new_booking)
+        db.session.commit()
+        return make_response(new_booking.to_dict(), 201)
+    
+    
+api.add_resource(User_Booking,"/booking","/booking/<int:booking_id>")
 
 
 

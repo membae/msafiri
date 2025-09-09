@@ -1,8 +1,8 @@
-"""initial migration
+"""unique bus id removed
 
-Revision ID: e51ade927690
+Revision ID: 325235f05f53
 Revises: 
-Create Date: 2025-09-09 13:40:49.964735
+Create Date: 2025-09-09 23:00:01.522107
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'e51ade927690'
+revision = '325235f05f53'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -33,6 +33,8 @@ def upgrade():
     sa.Column('to_loc', sa.String(), nullable=False),
     sa.Column('date', sa.String(), nullable=False),
     sa.Column('fare', sa.Integer(), nullable=False),
+    sa.Column('bus_id', sa.Integer(), nullable=False),
+    sa.Column('seat_number', sa.String(length=10), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')

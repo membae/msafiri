@@ -15,7 +15,7 @@ class User(db.Model, SerializerMixin):
     password=db.Column(db.String, nullable=False)
     
     booking=db.relationship("Booking", back_populates="user", cascade="all, delete-orphan")
-    
+    serialize_only = ("id", "first_name", "last_name", "email") 
     
 class Booking(db.Model, SerializerMixin):
     __tablename__="bookings"
@@ -24,8 +24,12 @@ class Booking(db.Model, SerializerMixin):
     to_loc=db.Column(db.String, nullable=False)
     date=db.Column(db.String, nullable=False)
     fare=db.Column(db.Integer, nullable=False)
+    bus_id = db.Column(db.Integer, nullable=False)
+    seat_number = db.Column(db.String(10), nullable=False)
     
     user_id=db.Column(db.Integer, db.ForeignKey("users.id"))
     user=db.relationship("User",back_populates="booking")
+    serialize_only = ("id", "from_loc", "to_loc", "date", "bus_id", "seat_number", "fare", "user_id")
+
     
     
