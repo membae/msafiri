@@ -60,7 +60,7 @@ function Navbar() {
 
         {/* Links */}
         <div className="navbar-links">
-          <Link to="/home">Home</Link>
+          <Link to="/">Home</Link>
           <Link to="/booking">Bookings</Link>
           <Link to="/profile">Profile</Link>
         </div>

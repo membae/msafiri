@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Navbar from "./Navbar";
+import { useNavigate } from "react-router-dom";
 
 function Profile() {
   const [user, setUser] = useState(null);
@@ -9,6 +10,7 @@ function Profile() {
     email: "",
   });
 
+  const navigate = useNavigate();
   const userId = localStorage.getItem("user_id");
 
   useEffect(() => {
@@ -45,6 +47,14 @@ function Profile() {
         alert("Profile updated successfully!");
       })
       .catch((err) => console.error("Error updating user:", err));
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("user_id");
+    localStorage.removeItem("user");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    navigate("/login");
   };
 
   if (!userId) return <p>Please log in to view your profile.</p>;
@@ -99,12 +109,11 @@ function Profile() {
           border-color: #007bff;
         }
 
-        /* Button */
-        .update-btn {
+        /* Buttons */
+        .btn {
           width: 100%;
           padding: 14px;
-          background: #007bff;
-          color: white;
+          margin-top: 10px;
           border: none;
           border-radius: 8px;
           font-size: 1rem;
@@ -112,8 +121,23 @@ function Profile() {
           transition: background 0.3s ease, transform 0.2s ease;
         }
 
+        .update-btn {
+          background: #007bff;
+          color: white;
+        }
+
         .update-btn:hover {
           background: #0056b3;
+          transform: translateY(-2px);
+        }
+
+        .logout-btn {
+          background: #dc3545;
+          color: white;
+        }
+
+        .logout-btn:hover {
+          background: #b52a37;
           transform: translateY(-2px);
         }
 
@@ -129,7 +153,7 @@ function Profile() {
           .form-group input {
             font-size: 0.95rem;
           }
-          .update-btn {
+          .btn {
             font-size: 0.95rem;
           }
         }
@@ -149,7 +173,7 @@ function Profile() {
             padding: 10px 12px;
             font-size: 0.9rem;
           }
-          .update-btn {
+          .btn {
             padding: 12px;
             font-size: 0.9rem;
           }
@@ -186,8 +210,11 @@ function Profile() {
               onChange={handleChange}
             />
           </div>
-          <button type="submit" className="update-btn">
+          <button type="submit" className="btn update-btn">
             Update Profile
+          </button>
+          <button type="button" className="btn logout-btn" onClick={handleLogout}>
+            Logout
           </button>
         </form>
       </div>

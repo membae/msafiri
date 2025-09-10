@@ -1,6 +1,6 @@
 // src/pages/Signup.jsx
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 function Signup() {
   const navigate = useNavigate();
@@ -104,6 +104,19 @@ function Signup() {
           background-color: #f8d7da;
           color: #721c24;
         }
+        .login-link {
+          text-align: center;
+          margin-top: 15px;
+          font-size: 14px;
+        }
+        .login-link a {
+          color: #007bff;
+          text-decoration: none;
+          font-weight: 500;
+        }
+        .login-link a:hover {
+          text-decoration: underline;
+        }
       `}</style>
 
       <div className="signup-box">
@@ -153,6 +166,10 @@ function Signup() {
             {loading ? "Signing up..." : "Signup"}
           </button>
         </form>
+
+        <div className="login-link">
+          Already have an account? <Link to="/login">Login</Link>
+        </div>
       </div>
     </div>
   );
