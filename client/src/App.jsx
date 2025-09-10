@@ -7,6 +7,7 @@ import Home from './components/Home'
 import Bookings from './components/Bookings'
 import Buses from './components/Buses'
 import Navbar from './components/Navbar'
+import Profile from './components/Profile'
 
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
         <Route path='/home' element={<Home/>} />
         <Route path='/booking' element={<Bookings/>} />
         <Route path='/bus' element={<Buses/>} />
+        <Route path='/profile' element={<Profile/>} />
       </Routes>
     </>
   )
