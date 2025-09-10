@@ -246,6 +246,27 @@ class User_Resource(Resource):
         users = [u.to_dict() for u in User.query.all()]
         return make_response(users, 200)
     
+    def patch(self, user_id):
+        user = User.query.get(user_id)
+        if not user:
+            return make_response({"msg": "User not found"}, 404)
+
+        data = request.get_json()
+
+        # Example fields to update
+        if "first_name" in data:
+            user.first_name = data["first_name"]
+        if "last_name" in data:
+            user.last_name = data["last_name"]
+        if "email" in data:
+            user.email = data["email"]
+        if "password" in data:  # ideally hash this
+            user.password = data["password"]
+
+        db.session.commit()
+        return make_response(user.to_dict(), 200)
+
+    
 api.add_resource(User_Resource,"/users","/users/<int:user_id>")
 
 
