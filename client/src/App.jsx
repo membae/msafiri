@@ -6,6 +6,7 @@ import './App.css'
 import Home from './components/Home'
 import Bookings from './components/Bookings'
 import Buses from './components/Buses'
+import Navbar from './components/Navbar'
 
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
   return (
     <>
       <Routes>
+        <Route path='/navbar' element={<Navbar />}/>
         <Route path='/login' element={<Login />}/>
         <Route path='/signup' element={<Signup />}/>
         <Route path='/home' element={<Home/>} />
