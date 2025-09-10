@@ -111,9 +111,9 @@ class User_Booking(Resource):
         bus_id = data.get("bus_id")
         seat_number = data.get("seat_number")
         
-        existing_booking = Booking.query.filter_by(user_id=user_id, bus_id=bus_id).first()
-        if existing_booking:
-            return make_response({"msg": "You have already booked a seat on this bus"}, 400)
+        # existing_booking = Booking.query.filter_by(user_id=user_id, bus_id=bus_id).first()
+        # if existing_booking:
+        #     return make_response({"msg": "You have already booked a seat on this bus"}, 400)
 
    
         fare = FARES.get((from_loc, to_loc))
@@ -234,6 +234,19 @@ class GetBus(Resource):
 
 
 api.add_resource(GetBus,"/buses","/buses/<int:id>")
+
+class User_Resource(Resource):
+    def get(self, user_id=None):
+        if user_id:
+            user = User.query.get(user_id)
+            if user:
+                return make_response(user.to_dict(), 200)
+            return make_response({"msg": "User not found"}, 404)
+
+        users = [u.to_dict() for u in User.query.all()]
+        return make_response(users, 200)
+    
+api.add_resource(User_Resource,"/users","/users/<int:user_id>")
 
 
 class Location(Resource):

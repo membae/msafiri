@@ -15,7 +15,7 @@ class User(db.Model, SerializerMixin):
     password=db.Column(db.String, nullable=False)
     
     booking=db.relationship("Booking", back_populates="user", cascade="all, delete-orphan")
-    serialize_only = ("id", "first_name", "last_name", "email") 
+    serialize_only = ("id", "first_name", "last_name", "email","booking") 
     
 class Booking(db.Model, SerializerMixin):
     __tablename__="bookings"
