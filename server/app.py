@@ -91,43 +91,50 @@ api.add_resource(Login,'/login')
 
 
 class User_Booking(Resource):
-    def get(self,booking_id=None):
+    @jwt_required()
+    def get(self, booking_id=None):
+        user_id = int(get_jwt_identity())
+
         if booking_id:
-            booking=Booking.query.get(booking_id)
+            # Get a specific booking for this user
+            booking = Booking.query.filter_by(id=booking_id, user_id=user_id).first()
             if booking:
-                return make_response(booking.to_dict(),200)
-            return make_response({"msg":"Booking not found"},404)
-        bookings = [b.to_dict() for b in Booking.query.all()]
-        return make_response(bookings,200)
+                return make_response(booking.to_dict(), 200)
+            return make_response({"msg": "Booking not found"}, 404)
+
+        # Get all bookings for this user
+        user_bookings = Booking.query.filter_by(user_id=user_id).all()
         
-    
+        # Split into pending and completed
+        pending = [b.to_dict() for b in user_bookings if b.paid == 0]
+        completed = [b.to_dict() for b in user_bookings if b.paid == 1]
+
+        return make_response({
+            "pending": pending,
+            "completed": completed
+        }, 200)
+
     @jwt_required()
     def post(self):
-        data=request.get_json()
+        data = request.get_json()
         user_id = int(get_jwt_identity())
         
         from_loc = data.get("from_loc")
         to_loc = data.get("to_loc")
         bus_id = data.get("bus_id")
         seat_number = data.get("seat_number")
-        
-        # existing_booking = Booking.query.filter_by(user_id=user_id, bus_id=bus_id).first()
-        # if existing_booking:
-        #     return make_response({"msg": "You have already booked a seat on this bus"}, 400)
-
-   
         fare = FARES.get((from_loc, to_loc))
+        
         if not fare:
             return make_response({"msg": "Invalid route"}, 400)
-        
+
         bus = Bus.query.get(bus_id)
         if not bus:
             return make_response({"msg": "Bus not found"}, 404)
 
-   
         if len(bus.bookings) >= bus.capacity:
             return make_response({"msg": "Bus is fully booked"}, 400)
-        
+
         try:
             seat_number_int = int(seat_number)
             if seat_number_int < 1 or seat_number_int > bus.capacity:
@@ -135,27 +142,32 @@ class User_Booking(Resource):
         except ValueError:
             return make_response({"msg": "Seat number must be a valid integer"}, 400)
 
-    
         if seat_number in [b.seat_number for b in bus.bookings]:
             return make_response({"msg": f"Seat {seat_number} is already booked"}, 400)
 
+        # Accept paid from request (default to 0 if not provided)
+        paid = data.get("paid", 0)
+        if isinstance(paid, bool):  # convert True/False to 1/0
+            paid = 1 if paid else 0
 
         new_booking = Booking(
             user_id=user_id,
             from_loc=from_loc,
             to_loc=to_loc,
             date=data.get("date"),
-            bus_id=data.get("bus_id"),
-            seat_number=data.get("seat_number"),
+            bus_id=bus_id,
+            seat_number=seat_number,
             fare=fare,
+            paid=paid
         )
+
         db.session.add(new_booking)
         db.session.commit()
         return make_response(new_booking.to_dict(), 201)
-    
-    
-api.add_resource(User_Booking,"/booking","/booking/<int:booking_id>")
 
+
+
+api.add_resource(User_Booking, "/booking", "/booking/<int:booking_id>")
 
 class GetBus(Resource):
     def get(self,id=None):
