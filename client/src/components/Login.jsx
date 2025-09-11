@@ -36,7 +36,7 @@ function Login() {
         localStorage.setItem("user_id", data.user.id);
 
         setMessage({ type: "success", text: "Login successful! Redirecting..." });
-        setTimeout(() => navigate("/home"), 1000);
+        setTimeout(() => navigate("/"), 1000);
       } else {
         setMessage({ type: "error", text: data.msg });
       }
