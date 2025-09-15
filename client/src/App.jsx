@@ -9,6 +9,7 @@ import Buses from './components/Buses'
 import Navbar from './components/Navbar'
 import Profile from './components/Profile'
 import Logout from './components/Logout'
+import Pay from './components/Pay'
 
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
         <Route path='/booking' element={<Bookings/>} />
         <Route path='/bus' element={<Buses/>} />
         <Route path='/profile' element={<Profile/>} />
+        <Route path='/payment/:bookingId' element={<Pay />} />
         <Route path='/logout' element={<Logout/>} />
       </Routes>
     </>

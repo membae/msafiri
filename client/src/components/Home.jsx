@@ -1,5 +1,6 @@
 // src/pages/Home.jsx
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // ✅ for redirecting
 import Navbar from "./Navbar";
 
 function Home() {
@@ -14,25 +15,27 @@ function Home() {
   });
   const [message, setMessage] = useState(null);
 
+  const navigate = useNavigate();
+
   useEffect(() => {
     fetch("http://localhost:5000/locations")
-      .then(res => res.json())
-      .then(data => setLocations(data))
-      .catch(err => console.error(err));
+      .then((res) => res.json())
+      .then((data) => setLocations(data))
+      .catch((err) => console.error(err));
   }, []);
 
   useEffect(() => {
     if (formData.from && formData.to) {
       fetch("http://localhost:5000/buses")
-        .then(res => res.json())
-        .then(data => {
-          const availableBuses = data.map(bus => {
-            const bookedSeats = bus.bookings?.map(b => b.seat_number) || [];
+        .then((res) => res.json())
+        .then((data) => {
+          const availableBuses = data.map((bus) => {
+            const bookedSeats = bus.bookings?.map((b) => b.seat_number) || [];
             return { ...bus, bookedSeats };
           });
           setBuses(availableBuses);
         })
-        .catch(err => console.error(err));
+        .catch((err) => console.error(err));
     }
   }, [formData.from, formData.to]);
 
@@ -52,7 +55,7 @@ function Home() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           from_loc: formData.from,
@@ -64,8 +67,12 @@ function Home() {
       });
       const data = await res.json();
       if (res.ok) {
-        setMessage({ type: "success", text: "Booking successful!" });
-        setFormData({ ...formData, bus_id: "", seat_number: "" });
+        setMessage({ type: "success", text: "Booking successful! Redirecting to payment..." });
+
+        // ✅ Redirect to Pay page with bookingId
+        setTimeout(() => {
+          navigate(`/payment/${data.id}`);
+        }, 1500);
       } else {
         setMessage({ type: "error", text: data.msg });
       }
@@ -86,7 +93,7 @@ function Home() {
             align-items: center;
             min-height: 100vh;
             background-color: #f3f3f3;
-            padding-top: 80px; /* ✅ pushes content below navbar */
+            padding-top: 80px;
           }
           .home-box {
             background-color: #fff;
@@ -145,28 +152,58 @@ function Home() {
 
           <form onSubmit={handleBooking}>
             <label>From:</label>
-            <select name="from" value={formData.from} onChange={handleChange} required>
+            <select
+              name="from"
+              value={formData.from}
+              onChange={handleChange}
+              required
+            >
               <option value="">Select location</option>
-              {locations.map(loc => <option key={loc} value={loc}>{loc}</option>)}
+              {locations.map((loc) => (
+                <option key={loc} value={loc}>
+                  {loc}
+                </option>
+              ))}
             </select>
 
             <label>To:</label>
-            <select name="to" value={formData.to} onChange={handleChange} required>
+            <select
+              name="to"
+              value={formData.to}
+              onChange={handleChange}
+              required
+            >
               <option value="">Select location</option>
-              {locations.map(loc => <option key={loc} value={loc}>{loc}</option>)}
+              {locations.map((loc) => (
+                <option key={loc} value={loc}>
+                  {loc}
+                </option>
+              ))}
             </select>
 
             <label>Date:</label>
-            <input type="date" name="date" value={formData.date} onChange={handleChange} required />
+            <input
+              type="date"
+              name="date"
+              value={formData.date}
+              onChange={handleChange}
+              required
+            />
 
             {buses.length > 0 && (
               <>
                 <label>Select Bus:</label>
-                <select name="bus_id" value={formData.bus_id} onChange={handleChange} required>
+                <select
+                  name="bus_id"
+                  value={formData.bus_id}
+                  onChange={handleChange}
+                  required
+                >
                   <option value="">Select bus</option>
-                  {buses.map(bus => (
+                  {buses.map((bus) => (
                     <option key={bus.id} value={bus.id}>
-                      {bus.regNo} - {bus.capacity - bus.bookedSeats.length} seats available
+                      {bus.regNo} -{" "}
+                      {bus.capacity - bus.bookedSeats.length} seats available
                     </option>
                   ))}
                 </select>
@@ -178,7 +215,11 @@ function Home() {
                       type="number"
                       name="seat_number"
                       min="1"
-                      max={buses.find(bus => bus.id === parseInt(formData.bus_id))?.capacity || 1}
+                      max={
+                        buses.find(
+                          (bus) => bus.id === parseInt(formData.bus_id)
+                        )?.capacity || 1
+                      }
                       value={formData.seat_number}
                       onChange={handleChange}
                       required
