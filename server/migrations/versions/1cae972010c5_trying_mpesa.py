@@ -1,8 +1,8 @@
-"""added a paid column
+"""trying mpesa
 
-Revision ID: d68fbbe20cab
+Revision ID: 1cae972010c5
 Revises: 
-Create Date: 2025-09-11 07:50:35.063049
+Create Date: 2025-09-11 13:44:05.442750
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'd68fbbe20cab'
+revision = '1cae972010c5'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -42,6 +42,7 @@ def upgrade():
     sa.Column('fare', sa.Integer(), nullable=False),
     sa.Column('seat_number', sa.String(length=10), nullable=False),
     sa.Column('paid', sa.Boolean(), nullable=False),
+    sa.Column('checkout_request_id', sa.String(), nullable=True),
     sa.Column('user_id', sa.Integer(), nullable=True),
     sa.Column('bus_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['bus_id'], ['buses.id'], ),

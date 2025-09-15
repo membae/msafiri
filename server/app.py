@@ -7,6 +7,7 @@ import os,secrets
 from datetime import timedelta
 from werkzeug.security import check_password_hash,generate_password_hash
 from flask_jwt_extended import JWTManager,create_access_token, create_refresh_token,jwt_required,get_jwt_identity
+from mpesa import lipa_na_mpesa
 
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -35,14 +36,14 @@ jwt=JWTManager(app)
 LOCATIONS = ["Nairobi", "Mombasa", "Kisumu", "Eldoret"]
 
 FARES = {
-    ("Nairobi", "Mombasa"): 1200,
-    ("Mombasa", "Nairobi"): 1200,
-    ("Nairobi", "Kisumu"): 1500,
-    ("Kisumu", "Nairobi"): 1500,
-    ("Mombasa", "Kisumu"): 2000,
-    ("Kisumu", "Mombasa"): 2000,
-    ("Nairobi", "Eldoret"): 1300,
-    ("Eldoret", "Nairobi"): 1300,
+    ("Nairobi", "Mombasa"): 1,
+    ("Mombasa", "Nairobi"): 1,
+    ("Nairobi", "Kisumu"): 1,
+    ("Kisumu", "Nairobi"): 1,
+    ("Mombasa", "Kisumu"): 1,
+    ("Kisumu", "Mombasa"): 1,
+    ("Nairobi", "Eldoret"): 1,
+    ("Eldoret", "Nairobi"): 1,
 }
 
 
@@ -288,6 +289,58 @@ class Location(Resource):
     
 api.add_resource(Location, '/locations')
 
+class PayBooking(Resource):
+    @jwt_required()
+    def post(self, booking_id):
+        user_id = int(get_jwt_identity())
+        booking = Booking.query.filter_by(id=booking_id, user_id=user_id).first()
+        if not booking:
+            return make_response({"msg": "Booking not found"}, 404)
+
+        if booking.paid:
+            return make_response({"msg": "Booking already paid"}, 400)
+
+        data = request.get_json()
+        phone_number = data.get("phone_number")
+        if not phone_number:
+            return make_response({"msg": "Phone number is required"}, 400)
+
+        amount = booking.fare
+        account_ref = f"Booking-{booking.id}"
+        transaction_desc = "Bus fare payment"
+
+        try:
+            res = lipa_na_mpesa(phone_number, amount, account_ref, transaction_desc)
+
+            # Save checkout_request_id for later callback
+            if "CheckoutRequestID" in res:
+                booking.checkout_request_id = res["CheckoutRequestID"]
+                db.session.commit()
+
+            return make_response(res, 200)
+        except Exception as e:
+            return make_response({"msg": str(e)}, 500)
+api.add_resource(PayBooking, "/booking/<int:booking_id>/pay")
+
+
+@app.route("/mpesa/callback", methods=["POST"])
+def mpesa_callback():
+    data = request.get_json()
+    print("MPESA CALLBACK:", data)
+
+    try:
+        checkout_request_id = data["Body"]["stkCallback"]["CheckoutRequestID"]
+        result_code = data["Body"]["stkCallback"]["ResultCode"]
+
+        if result_code == 0:
+            booking = Booking.query.filter_by(checkout_request_id=checkout_request_id).first()
+            if booking:
+                booking.paid = True
+                db.session.commit()
+    except Exception as e:
+        print("Callback error:", e)
+
+    return jsonify({"ResultCode": 0, "ResultDesc": "Accepted"})
 
 
 
